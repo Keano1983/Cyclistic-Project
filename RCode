@@ -1,0 +1,55 @@
+--Load Packages--
+
+library(tidyverse)
+library(dplyr)
+library(readr)
+
+##--Import data--
+
+setwd("../R")
+
+
+may21 <- read_csv("202105-divvy-tripdata.csv")
+jun21 <- read_csv("202106-divvy-tripdata.csv")
+jul21 <- read_csv("202107-divvy-tripdata.csv")
+aug21 <- read_csv("202108-divvy-tripdata.csv")
+sep21 <- read_csv("202109-divvy-tripdata.csv")
+oct21 <- read_csv("202110-divvy-tripdata.csv")
+nov21 <- read_csv("202111-divvy-tripdata.csv")
+dec21 <- read_csv("202112-divvy-tripdata.csv")
+jan22 <- read_csv("202201-divvy-tripdata.csv")
+feb22 <- read_csv("202202-divvy-tripdata.csv")
+mar22 <- read_csv("202203-divvy-tripdata.csv")
+apr22 <- read_csv("202204-divvy-tripdata.csv")
+
+##--create single data frame--
+
+bike_rides <- rbind(may21, jun21, jul21, aug21, sep21, oct21, nov21, dec21, jan22, feb22, mar22, apr22)
+
+##--observe data and structure--
+
+colnames(bike_rides)
+dim(bike_rides)
+summary(bike_rides)
+str(bike_rides)
+
+##--from this remove rows with NA values by creating a vector of NA values in rows to start--
+
+na_rows <- which(!complete.cases(bike_rides))
+
+##-- Then a new df with all NA values removed and then one with duplicates removed--
+
+bike_rides_no_na <- bike_rides[-na_rows,]
+bike_rides_no_dup <- bike_rides_no_na %>% distinct()
+bike_rides_v2 <- bike_rides_no_dup
+
+##-- Create columns for Date, Day of the week and Ride Duration--
+bike_rides_v2$date <- as.Date(bike_rides_v2$started_at)
+bike_rides_v2$day_of_week <- format(as.Date(bike_rides_v2$date), "%A")
+bike_rides_v2$duration <- difftime(bike_rides_v2$ended_at, bike_rides_v2$started_at, tz, units = "mins")
+
+##-- Remove negative duration values--
+bike_rides_v2 <- bike_rides_v2[!((bike_rides_v2$end_lat == "") | is.na(bike_rides_v2$end_lat)|(bike_rides_v2$ride_length <= 0)), ]
+
+##-- Save file for further analysis and visualisation in Tableau--
+write.csv(bike_rides_v2, '"../R", row.names = FALSE)
