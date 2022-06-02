@@ -1,8 +1,10 @@
---Load Packages--
+##--Load Packages--
 
 library(tidyverse)
 library(dplyr)
 library(readr)
+library(janitor)
+library(lubridate)
 
 ##--Import data--
 
@@ -34,7 +36,8 @@ summary(bike_rides)
 str(bike_rides)
 
 ##--from this remove rows with NA values by creating a vector of NA values in rows to start--
-
+bike_rides <- janitor::remove_empty(bike_rides, which = c("cols"))
+bike_rides <- janitor::remove_empty(bike_rides, which = c("rows"))
 na_rows <- which(!complete.cases(bike_rides))
 
 ##-- Then a new df with all NA values removed and then one with duplicates removed--
@@ -43,13 +46,27 @@ bike_rides_no_na <- bike_rides[-na_rows,]
 bike_rides_no_dup <- bike_rides_no_na %>% distinct()
 bike_rides_v2 <- bike_rides_no_dup
 
-##-- Create columns for Date, Day of the week and Ride Duration--
-bike_rides_v2$date <- as.Date(bike_rides_v2$started_at)
+##-- Convert date time to timestamp--
+
+bike_rides_v2$started_at <- lubridate::ymd_hms(bike_rides_v2$started_at)
+bike_rides_v2$ended_at <- lubridate::ymd_hms(bike_rides_v2$ended_at)
+
+##-- Create columns for year, month, day of the week and Ride Duration calc field--
+
+bike_rides_v2$date <- as.Date(bike_rides_v2$started_at) #The default format is yyyy-mm-dd
+bike_rides_v2$month <- format(as.Date(bike_rides_v2$date), "%m")
+bike_rides_v2$day <- format(as.Date(bike_rides_v2$date), "%d")
+bike_rides_v2$year <- format(as.Date(bike_rides_v2$date), "%Y")
 bike_rides_v2$day_of_week <- format(as.Date(bike_rides_v2$date), "%A")
-bike_rides_v2$duration <- difftime(bike_rides_v2$ended_at, bike_rides_v2$started_at, tz, units = "mins")
+bike_rides_v2$duration <- difftime(bike_rides_v2$ended_at, bike_rides_v2$started_at, tz, units = "sec")
+
+##-- convert ride_length from factor to numeric--
+
+bike_rides_v2$duration <- as.numeric(as.character(bike_rides_v2$duration)) is.numeric(bike_rides_v2$duration)
 
 ##-- Remove negative duration values--
-bike_rides_v2 <- bike_rides_v2[!((bike_rides_v2$end_lat == "") | is.na(bike_rides_v2$end_lat)|(bike_rides_v2$ride_length <= 0)), ]
+
+bike_rides_v2 <- bike_rides_v2[!(bike_rides_v2$start_station_name == "HQ QR" | bike_rides_v2$duration<0),]
 
 ##-- Save file for further analysis and visualisation in Tableau--
 write.csv(bike_rides_v2, '"../R", row.names = FALSE)
