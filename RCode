@@ -64,9 +64,10 @@ bike_rides_v2$duration <- difftime(bike_rides_v2$ended_at, bike_rides_v2$started
 
 bike_rides_v2$duration <- as.numeric(as.character(bike_rides_v2$duration)) is.numeric(bike_rides_v2$duration)
 
-##-- Remove negative duration values--
+##-- Remove duration values under 60 seconds and any trip starting from HQ and any starting or ending at the repair warehouse--
 
-bike_rides_v2 <- bike_rides_v2[!(bike_rides_v2$start_station_name == "HQ QR" | bike_rides_v2$duration<0),]
+bike_rides_v2 <- bike_rides_v2[!(bike_rides_v2$start_station_name == "HQ QR" | bike_rides_v2$duration<=60),]
+bike_rides_v2 <- bike_rides_v2[!(bike_rides_v2$end_station_name == "Base - 2132 W Hubbard Warehouse"),]
 
 ##-- Save file for further analysis and visualisation in Tableau--
 write.csv(bike_rides_v2, '"../R", row.names = FALSE)
